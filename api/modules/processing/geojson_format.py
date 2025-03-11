@@ -67,4 +67,4 @@ def mndwi_mask_to_geojson(mndwi_mask, mndwi_mean, coordinates, start_date, end_d
 
 def vh_mask_to_geojson(vh_mask, vh_mean, coordinates, start_date, end_date):
     """Wrapper for VH-based water mask conversion to GeoJSON (Sentinel-1)."""
-    return convert_mask_to_geojson(vh_mask, vh_mean, coordinates, start_date, end_date, "VH")
+    return convert_mask_to_geojson(vh_mask, vh_mean, coordinates, start_date, end_date, "VH_filtered")

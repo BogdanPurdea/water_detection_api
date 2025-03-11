@@ -40,16 +40,16 @@ def calculate_water_mask(coordinates, start_date, end_date, source, bands=None, 
 
         if sentinel1.size().getInfo() == 0:
             raise ValueError("No Sentinel-1 images found for the given date range and coordinates.")
-        
         # Convert VH backscatter to decibels and apply a mean filter
         vh_decibels = sentinel1.select('VH').map(lambda image: ee.Image(10).multiply(image.log10()).rename('VH_dB'))
+        print(vh_decibels.getInfo())
         vh_filtered = vh_decibels.map(lambda image: image.focal_mean(radius=3, units='pixels').rename('VH_filtered'))
 
         # Resample Sentinel-1 to 30m resolution
         vh_resampled = vh_filtered.mean().reproject(crs='EPSG:4326', scale=30)
         
         # Create water mask using Sentinel-1 VH
-        water_mask = vh_resampled.lt(threshold).rename('Water_S1')
+        water_mask = vh_resampled.lt(threshold).rename("VH_filtered_water_mask")
 
         index_mean = vh_resampled.clip(roi)
     else:

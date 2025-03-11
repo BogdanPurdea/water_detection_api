@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from api.models.api_request import ApiRequest
-from api.modules.request_handlers import handle_s1_vh_mask, handle_s2_ndwi_mask, handle_s2_mndwi_mask
+from api.modules import handle_s1_vh_mask, handle_s2_ndwi_mask, handle_s2_mndwi_mask
 
 app = FastAPI()
 

@@ -1,6 +1,6 @@
 import uvicorn
 from fastapi import FastAPI
-from api.modules.init_config import init_gee
+from config.init_config import init_gee
 from api.app import app
 
 # Initialize GEE
