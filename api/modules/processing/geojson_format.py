@@ -50,7 +50,8 @@ def convert_mask_to_geojson(mask, mean_index, coordinates, start_date, end_date,
         "index_name": index_name,
         "start_date": start_date,
         "end_date": end_date,
-        "coordinates": coordinates  # Store ROI coordinates for reference
+        "coordinates": coordinates,
+        "source": "api"
     }
 
     return geojson

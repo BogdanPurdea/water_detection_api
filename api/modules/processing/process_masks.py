@@ -57,12 +57,12 @@ def calculate_water_mask(coordinates, start_date, end_date, source, bands=None, 
 
     return index_mean, water_mask
 
-def s2_ndwi_water_mask(coordinates, start_date, end_date, ndwi_threshold=0.2):
+def s2_ndwi_water_mask(coordinates, start_date, end_date, ndwi_threshold=0):
     """ Wrapper for NDWI water mask computation. """
     return calculate_water_mask(coordinates, start_date, end_date, "S2", ('B3', 'B8'), "NDWI", ndwi_threshold)
 
 
-def s2_mndwi_water_mask(coordinates, start_date, end_date, mndwi_threshold=0.2):
+def s2_mndwi_water_mask(coordinates, start_date, end_date, mndwi_threshold=0):
     """ Wrapper for MNDWI water mask computation. """
     return calculate_water_mask(coordinates, start_date, end_date, "S2", ('B3', 'B11'), "MNDWI", mndwi_threshold)
 
