@@ -1,71 +1,107 @@
 import ee
+from api.modules.processing.water_coverage import calculate_water_coverage
 
-def convert_mask_to_geojson(mask, mean_index, coordinates, start_date, end_date, index_name):
+def convert_water_mask_to_geojson(mask, mean_index, coordinates, start_date, end_date, index_name):
     """
-    Converts a water/flood mask to GeoJSON format using reduceToVectors.
+    Convert water detection results to GeoJSON format with water coverage statistics.
 
     Args:
-        mask (ee.Image): Water or flood mask image.
-        mean_index (ee.Image): Mean spectral index image (NDWI, MNDWI, etc.).
-        coordinates (list): List of coordinates defining the ROI.
-        start_date (str): Start date of analysis (YYYY-MM-DD).
-        end_date (str): End date of analysis (YYYY-MM-DD).
-        index_name (str): Name of the spectral index used (e.g., 'NDWI', 'MNDWI', 'VH').
+        mask: Binary water mask image (1 = water, 0 = non-water)
+        mean_index: Mean index values (NDWI, MNDWI, or VH backscatter)
+        coordinates: List of coordinates defining the area
+        start_date: Start date (YYYY-MM-DD)
+        end_date: End date (YYYY-MM-DD)
+        index_name: Name of the water index used ('NDWI', 'MNDWI', or 'VH_dB')
 
     Returns:
-        dict: Mask in GeoJSON format with metadata stored in the FeatureCollection.
+        dict: GeoJSON format containing:
+            - Water body polygons
+            - Mean index values for each polygon
+            - Total water coverage percentage
+            - Metadata about the detection
     """
-    # Define ROI
+    # Create area boundary
     roi = ee.Geometry.Polygon(coordinates)
 
-    # Convert the mask to vectors (polygons)
+    # Calculate water coverage percentage
+    water_coverage_pct = calculate_water_coverage(mask, roi)
+
+    # Convert the mask to polygons
     vectors = mask.reduceToVectors(
         geometry=roi,
-        scale=30,  # Resolution of the mask
-        geometryType='polygon',  # Output as polygons
-        eightConnected=False,  # Use 4-connected pixel rule
-        labelProperty='value',  # Property to store the pixel value
-        maxPixels=1e13  # Increase if needed
+        scale=30,  # Resolution in meters
+        geometryType='polygon',
+        eightConnected=False,
+        labelProperty='value',
+        maxPixels=1e13
     )
-
-    # Function to add the mean index value to each feature
-    def add_index_mean(feature):
-        index_value = mean_index.reduceRegion(
+    # Add the average index value to each polygon
+    def add_index_value(feature):
+        mean_value = mean_index.reduceRegion(
             reducer=ee.Reducer.mean(),
             geometry=feature.geometry(),
             scale=30,
             maxPixels=1e13
-        ).get(index_name)  # Get the mean index value
+        ).get(index_name)
+        
+        return feature.set(f'{index_name.lower()}_mean', mean_value)
 
-        return feature.set(f'{index_name.lower()}_mean', index_value)
+    # Apply the calculation to all polygons
+    vectors_with_data = vectors.map(add_index_value)
 
-    # Apply the function to all vector features
-    merged_features = vectors.map(add_index_mean)
+    # Convert to GeoJSON format
+    geojson = vectors_with_data.getInfo()
 
-    # Convert to GeoJSON
-    geojson = merged_features.getInfo()
-
-    # Add metadata to the FeatureCollection level
+    # Add metadata including water coverage
     geojson["properties"] = {
         "index_name": index_name,
         "start_date": start_date,
         "end_date": end_date,
         "coordinates": coordinates,
-        "source": "api"
+        "source": "api",
+        "water_coverage_percentage": water_coverage_pct  # Added water coverage
     }
 
     return geojson
 
-def ndwi_mask_to_geojson(ndwi_mask, ndwi_mean, coordinates, start_date, end_date):
-    """Wrapper for NDWI-based water mask conversion to GeoJSON."""
-    return convert_mask_to_geojson(ndwi_mask, ndwi_mean, coordinates, start_date, end_date, "NDWI")
+def convert_optical_ndwi_to_geojson(ndwi_mask, ndwi_mean, coordinates, start_date, end_date):
+    """
+    Convert NDWI-based water detection results to GeoJSON.
+    NDWI is better suited for detecting open water bodies.
+    """
+    return convert_water_mask_to_geojson(
+        ndwi_mask, 
+        ndwi_mean, 
+        coordinates, 
+        start_date, 
+        end_date, 
+        "NDWI"
+    )
 
+def convert_optical_mndwi_to_geojson(mndwi_mask, mndwi_mean, coordinates, start_date, end_date):
+    """
+    Convert MNDWI-based water detection results to GeoJSON.
+    MNDWI is better suited for turbid water and built-up areas.
+    """
+    return convert_water_mask_to_geojson(
+        mndwi_mask, 
+        mndwi_mean, 
+        coordinates, 
+        start_date, 
+        end_date, 
+        "MNDWI"
+    )
 
-def mndwi_mask_to_geojson(mndwi_mask, mndwi_mean, coordinates, start_date, end_date):
-    """Wrapper for MNDWI-based water mask conversion to GeoJSON."""
-    return convert_mask_to_geojson(mndwi_mask, mndwi_mean, coordinates, start_date, end_date, "MNDWI")
-
-
-def vh_mask_to_geojson(vh_mask, vh_mean, coordinates, start_date, end_date):
-    """Wrapper for VH-based water mask conversion to GeoJSON (Sentinel-1)."""
-    return convert_mask_to_geojson(vh_mask, vh_mean, coordinates, start_date, end_date, "VH_filtered")
+def convert_radar_water_to_geojson(vh_mask, vh_mean, coordinates, start_date, end_date):
+    """
+    Convert radar-based (Sentinel-1 VH) water detection results to GeoJSON.
+    Radar detection works through clouds but may have noise in urban areas.
+    """
+    return convert_water_mask_to_geojson(
+        vh_mask, 
+        vh_mean, 
+        coordinates, 
+        start_date, 
+        end_date, 
+        "VH_dB"
+    )
