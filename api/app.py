@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from api.models.api_request import ApiRequest
-from api.modules import handle_s1_vh_mask, handle_s2_ndwi_mask, handle_s2_mndwi_mask
+from api.modules import handle_s1_vh_mask, handle_s2_ndwi_mask, handle_s2_mndwi_mask, handle_grid_ndwi
 
 app = FastAPI()
 
@@ -15,3 +15,7 @@ async def get_s2_ndwi_mask(request: ApiRequest):
 @app.post("/get-s2-mndwi-mask")
 async def get_s2_mndwi_mask(request: ApiRequest):
     return await handle_s2_mndwi_mask(request)
+
+@app.post("/get-grid-ndwi")
+async def get_grid_ndwi(request: ApiRequest):
+    return await handle_grid_ndwi(request)

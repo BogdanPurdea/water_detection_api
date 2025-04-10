@@ -25,7 +25,6 @@ def detect_water_from_satellite(coordinates, start_date, end_date, source, bands
     if source == "S2":
         # Load Sentinel-2 imagery
         sentinel2 = get_sentinel2_collection(roi, start_date, end_date)
-
         if sentinel2.size().getInfo() == 0:
             raise ValueError(f"No Sentinel-2 images found for {index_name} computation in the given date range.")
 
