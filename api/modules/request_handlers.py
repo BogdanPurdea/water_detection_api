@@ -85,9 +85,33 @@ async def handle_grid_ndwi(request: ApiRequest):
         )
 
         # Save the grid data if needed
-        save_geojson(grid_data, "./data/grid_ndwi_data.geojson")
+        # save_geojson(grid_data, "./data/grid_ndwi_data.geojson")
         
         logger.info("Computed grid data successfully.")
+        return grid_data
+
+    except Exception as e:
+        logger.error("An error occurred: %s", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+async def handle_grid_mndwi(request: ApiRequest):
+    try:
+        logger.info("Received MNDWI grid request: %s", request)
+
+        # Process the area as a grid of cells using MNDWI
+        grid_data = process_grid(
+            coordinates=request.coordinates,
+            start_date=request.start_date,
+            end_date=request.end_date,
+            cell_size_degrees=0.1,  # Default cell size (can be made configurable)
+            mndwi_threshold=request.mndwi_threshold,
+            water_index='MNDWI'
+        )
+
+        # Save the grid data if needed
+        # save_geojson(grid_data, "./data/grid_mndwi_data.geojson")
+        
+        logger.info("Computed MNDWI grid data successfully.")
         return grid_data
 
     except Exception as e:
