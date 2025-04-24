@@ -1,4 +1,5 @@
 import ee
+from .water_coverage import calculate_water_coverage
 
 def convert_water_mask_to_geojson(mask, mean_index, coordinates, start_date, end_date, index_name):
     """
@@ -22,6 +23,9 @@ def convert_water_mask_to_geojson(mask, mean_index, coordinates, start_date, end
     # Create area boundary
     roi = ee.Geometry.Polygon(coordinates)
 
+    # Calculate water coverage percentage
+    water_coverage_percent = calculate_water_coverage(mask, roi)
+
     # Convert the mask to polygons
     vectors = mask.reduceToVectors(
         geometry=roi,
@@ -31,6 +35,7 @@ def convert_water_mask_to_geojson(mask, mean_index, coordinates, start_date, end
         labelProperty='value',
         maxPixels=1e13
     )
+
     # Add the average index value to each polygon
     def add_index_value(feature):
         mean_value = mean_index.reduceRegion(
@@ -54,6 +59,7 @@ def convert_water_mask_to_geojson(mask, mean_index, coordinates, start_date, end
         "start_date": start_date,
         "end_date": end_date,
         "coordinates": coordinates,
+        "water_coverage": water_coverage_percent,
         "source": "api",
     }
 
